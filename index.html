@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Asistente de estudio — Judaicas y Materias Regulares">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="StudyTrack">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+
+  <title>StudyTrack</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- External libs (loaded before app scripts) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://unpkg.com/docx@8.2.0/build/index.js"></script>
+
+  <!-- Google APIs (async — app handles graceful degradation) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN: Landing                             -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="screen-landing" class="screen active">
+
+    <header class="app-header" style="background:transparent;border:none;justify-content:flex-end">
+      <button class="btn-icon btn-open-settings" title="Ajustes">⚙</button>
+    </header>
+
+    <div class="landing-hero">
+      <div class="logo">StudyTrack</div>
+      <div class="tagline">Elige tu área de estudio</div>
+    </div>
+
+    <div class="track-grid">
+      <button class="track-card" data-track="judaicas">
+        <span class="track-icon">✡</span>
+        <span class="track-name">Judaicas</span>
+        <span class="track-subjects">Navi · Torá · Tushbá · Halajá · Guemará</span>
+      </button>
+      <button class="track-card" data-track="regulares">
+        <span class="track-icon">📚</span>
+        <span class="track-name">Materias Regulares</span>
+        <span class="track-subjects">Español · Mate · ENG 104 · AP Seminar · AP CSP · Humanidades</span>
+      </button>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN: Input                               -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="screen-input" class="screen">
+
+    <header class="app-header">
+      <button class="btn-icon" id="btn-back" title="Volver">←</button>
+      <span id="input-track-badge" class="input-track-badge">Judaicas</span>
+      <button class="btn-icon btn-open-settings" title="Ajustes">⚙</button>
+    </header>
+
+    <div class="screen-body">
+
+      <!-- Subject selector (Materias Regulares only) -->
+      <div id="subject-row" class="subject-row hidden">
+        <label for="subject-select">Materia</label>
+        <select id="subject-select">
+          <option value="">Selecciona una materia...</option>
+          <option value="espanol">Español</option>
+          <option value="matematicas">Matemáticas</option>
+          <option value="humanidades">Humanidades</option>
+          <option value="eng104">ENG 104 (Oregon State)</option>
+          <option value="ap-seminar">AP Seminar</option>
+          <option value="ap-csp">AP CSP</option>
+          <option value="otro">Otra materia</option>
+        </select>
+      </div>
+
+      <!-- Input tabs -->
+      <div id="input-tabs-row" class="input-tabs tab-judaicas">
+        <button class="tab-btn active" data-tab="file">📎 Archivo</button>
+        <button class="tab-btn" data-tab="text">✏️ Texto</button>
+        <button class="tab-btn" data-tab="classroom">🏫 Classroom</button>
+        <button class="tab-btn" data-tab="drive">💾 Drive</button>
+      </div>
+
+      <!-- ── Tab: File upload ─── -->
+      <div id="pane-file" class="tab-pane active">
+        <div id="drop-zone" class="drop-zone">
+          <input type="file" id="file-input" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.webp" hidden>
+
+          <div id="drop-placeholder" class="drop-zone-placeholder">
+            <span class="drop-zone-icon">📁</span>
+            <p>Arrastra un archivo aquí</p>
+            <p class="small">PDF · Word · JPG · PNG</p>
+            <button class="btn-choose" id="btn-choose-file">Seleccionar archivo</button>
+          </div>
+
+          <div id="file-preview-row" class="file-preview hidden">
+            <span id="file-preview-name" class="file-preview-name"></span>
+            <button class="btn-remove" id="btn-remove-file">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: Paste text ─── -->
+      <div id="pane-text" class="tab-pane">
+        <textarea id="text-input" placeholder="Pega aquí el texto de tu tarea o escríbela directamente..."></textarea>
+      </div>
+
+      <!-- ── Tab: Google Classroom ─── -->
+      <div id="pane-classroom" class="tab-pane">
+        <div class="google-panel">
+          <div class="google-logo">🏫</div>
+          <p>Conecta Google Classroom para ver tus tareas asignadas directamente.</p>
+          <button class="btn-google" id="btn-classroom-connect">
+            <!-- Google G logo -->
+            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Conectar Google Classroom
+          </button>
+        </div>
+        <div id="classroom-dynamic"></div>
+      </div>
+
+      <!-- ── Tab: Google Drive ─── -->
+      <div id="pane-drive" class="tab-pane">
+        <div class="google-panel">
+          <div class="google-logo">💾</div>
+          <p>Abre el selector de Drive para elegir un PDF, Word o imagen desde tu cuenta.</p>
+          <button class="btn-google" id="btn-drive-connect">
+            <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Abrir Google Drive
+          </button>
+        </div>
+        <div id="drive-dynamic"></div>
+      </div>
+
+      <!-- Deep mode toggle (Judaicas only) -->
+      <div id="depth-row" class="depth-toggle">
+        <label class="toggle-switch">
+          <input type="checkbox" id="chk-deep">
+          <span class="toggle-track"></span>
+        </label>
+        <span class="depth-label">Más profundidad (respuestas extendidas)</span>
+      </div>
+
+      <!-- Error message -->
+      <div id="input-error" class="error-msg"></div>
+
+    </div><!-- end screen-body -->
+
+    <!-- Submit footer -->
+    <div class="input-submit">
+      <button id="btn-submit" class="btn-primary btn-judaicas">Completar tarea →</button>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN: Processing                          -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="screen-processing" class="screen">
+    <div id="processing-spinner" class="spinner"></div>
+    <p id="processing-msg">Procesando tu tarea...</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SCREEN: Output                              -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section id="screen-output" class="screen">
+
+    <header class="app-header">
+      <button class="btn-icon" id="btn-new-task" title="Nueva tarea">← Nueva tarea</button>
+      <button class="btn-icon btn-open-settings" title="Ajustes">⚙</button>
+    </header>
+
+    <!-- Draft warning (Materias Regulares only) -->
+    <div id="draft-banner" class="draft-banner hidden">
+      ✏️&nbsp; Borrador — Revisa y edita antes de entregar
+    </div>
+
+    <div class="output-layout">
+      <div class="output-panels">
+
+        <div class="output-panel">
+          <div id="output-left-header" class="panel-header judaicas-header">
+            Tarea original
+          </div>
+          <div id="original-content" class="content-box"></div>
+        </div>
+
+        <div class="output-panel">
+          <div id="output-right-header" class="panel-header judaicas-header">
+            Respuesta
+            <span style="font-size:0.7rem;font-weight:400;color:var(--subtext)">editable</span>
+          </div>
+          <div id="response-content" class="content-box editable" contenteditable="true" spellcheck="true"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="output-actions">
+      <button class="btn-action" id="btn-copy">📋 Copiar</button>
+      <button class="btn-action" id="btn-download-txt">⬇ .txt</button>
+      <button class="btn-action" id="btn-download-docx">⬇ .docx</button>
+    </div>
+
+  </section>
+
+</div><!-- end #app -->
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL: Settings                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="modal-settings" class="modal-overlay hidden">
+  <div class="modal-sheet" role="dialog" aria-modal="true" aria-label="Ajustes">
+
+    <div class="modal-header">
+      <h2>⚙ Ajustes</h2>
+      <button class="btn-icon" id="btn-close-settings" title="Cerrar">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="field">
+        <label for="input-api-key">Claude API Key</label>
+        <input type="password" id="input-api-key" placeholder="sk-ant-api03-..." autocomplete="off" autocorrect="off" spellcheck="false">
+        <p class="field-hint">Consíguela en console.anthropic.com → API Keys</p>
+      </div>
+
+      <div class="divider"></div>
+      <p style="font-size:0.8rem;color:var(--subtext)">Los siguientes datos son necesarios solo si usas Google Classroom o Drive.</p>
+
+      <div class="field">
+        <label for="input-google-client-id">Google Client ID</label>
+        <input type="text" id="input-google-client-id" placeholder="123456789.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+        <p class="field-hint">Crea credenciales OAuth 2.0 en console.cloud.google.com</p>
+      </div>
+
+      <div class="field">
+        <label for="input-google-api-key">Google API Key (Drive Picker)</label>
+        <input type="text" id="input-google-api-key" placeholder="AIza..." autocomplete="off" spellcheck="false">
+        <p class="field-hint">Requerida solo para el selector de archivos de Drive</p>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="save-btn" id="btn-save-settings">Guardar</button>
+      <p class="save-confirm" id="save-confirm">✓ Guardado</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
+
+<!-- App scripts -->
+<script src="js/export.js"></script>
+<script src="js/parsers.js"></script>
+<script src="js/api.js"></script>
+<script src="js/google.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
