@@ -2,50 +2,9 @@
 
 Asistente de estudio personal — Judaicas y Materias Regulares.
 
----
+🔗 **[Abrir StudyTrack](https://tommyhanono.github.io/studytrack/)**
 
-## Configuración rápida
-
-### 1. Claude API Key (requerida)
-
-1. Ve a [console.anthropic.com](https://console.anthropic.com) → **API Keys** → crea una clave.
-2. Abre la app → toca **⚙** (Ajustes) → pega la clave en el campo **Claude API Key** → Guardar.
-
-La clave se guarda en `localStorage` de tu navegador y nunca sale de tu dispositivo (solo se usa para llamar directamente a la API de Anthropic desde el navegador).
-
----
-
-### 2. Google Classroom + Drive (opcional)
-
-Si quieres conectar Google Classroom o Drive, necesitas una cuenta en Google Cloud:
-
-#### Paso A — Crear proyecto y credenciales
-
-1. Ve a [console.cloud.google.com](https://console.cloud.google.com).
-2. Crea un proyecto nuevo (ej. "StudyTrack").
-3. Habilita estas APIs en **APIs y servicios → Biblioteca**:
-   - Google Classroom API
-   - Google Drive API
-   - Google Picker API
-4. Ve a **APIs y servicios → Credenciales → Crear credenciales → ID de cliente OAuth 2.0**.
-   - Tipo de aplicación: **Aplicación web**
-   - Orígenes autorizados de JavaScript:
-     - Para local: `http://localhost:8080` (o el puerto que uses)
-     - Para GitHub Pages: `https://TU-USUARIO.github.io`
-   - Copia el **Client ID** (termina en `.apps.googleusercontent.com`).
-5. En la misma página de Credenciales, crea también una **Clave de API** (para el Drive Picker).
-
-#### Paso B — Pantalla de consentimiento OAuth
-
-En **APIs y servicios → Pantalla de consentimiento de OAuth**:
-- Tipo: **Externo** → agrega tu cuenta como usuario de prueba.
-- Scopes requeridos: `classroom.courses.readonly`, `classroom.coursework.me.readonly`, `drive.readonly`.
-
-#### Paso C — Configurar en la app
-
-En **⚙ Ajustes**:
-- **Google Client ID**: pega el Client ID de OAuth.
-- **Google API Key**: pega la clave de API (para Drive Picker).
+> Funciona directo, sin configuración. Solo abrí el link.
 
 ---
 

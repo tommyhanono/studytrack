@@ -4,7 +4,7 @@ window.ST = window.ST || {};
 
 /* Settings */
 ST.settings = {
-  get(key) { return localStorage.getItem('st_' + key) || ''; },
+  get(key) { return localStorage.getItem('st_' + key) || (window.ST.CONFIG && ST.CONFIG[key]) || ''; },
   set(key, val) { localStorage.setItem('st_' + key, val); }
 };
 
