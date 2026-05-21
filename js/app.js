@@ -372,11 +372,6 @@ ST.app = {
       }
     });
 
-    document.getElementById('btn-download-txt').addEventListener('click', () => {
-      const text = document.getElementById('response-content').innerText;
-      ST.export.downloadTxt(text, 'respuesta.txt');
-    });
-
     document.getElementById('btn-download-docx').addEventListener('click', () => {
       const text = document.getElementById('response-content').innerText;
       ST.export.downloadDocx(text, 'respuesta.docx');
